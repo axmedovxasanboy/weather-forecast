@@ -1,7 +1,17 @@
 package uz.weather.model.dailyforecasts;
 
-public class RealFeelTemperature {
-    protected Minimum min;
-    protected Maximum max;
+import lombok.Getter;
 
+@Getter
+public class RealFeelTemperature {
+    protected Minimum Minimum;
+    protected Maximum Maximum;
+
+    @Override
+    public String toString() {
+        return "RealFeelTemperature{" +
+                "Minimum=" + Minimum +
+                ", Maximum=" + Maximum +
+                '}';
+    }
 }

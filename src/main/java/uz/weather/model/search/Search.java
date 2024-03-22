@@ -1,9 +1,7 @@
 package uz.weather.model.search;
 
 import lombok.Getter;
-import lombok.Setter;
 
-@Setter
 @Getter
 public class Search {
     protected Integer Version;
@@ -15,6 +13,7 @@ public class Search {
     protected String PrimaryPostalCode;
     protected Region Region;
     protected Country Country;
+    protected AdministrativeArea AdministrativeArea;
 
     @Override
     public String toString() {
@@ -28,6 +27,7 @@ public class Search {
                 ", PrimaryPostalCode='" + PrimaryPostalCode + '\'' +
                 ", Region=" + Region +
                 ", Country=" + Country +
+                ", AdminstrativeArea=" + AdministrativeArea +
                 '}';
     }
 }
