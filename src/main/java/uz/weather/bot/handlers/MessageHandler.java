@@ -6,9 +6,18 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import uz.weather.bot.bot.Bot;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class MessageHandler implements BaseHandler {
     protected SendMessage message = new SendMessage();
+    private Map<Long, UserState> userStates = new HashMap<>();
     private Long chatId;
+    private enum UserState {
+        AWAITING_CONTACT,
+        AWAITING_CITY_NAME,
+        AWAITING_LOCATION
+    }
     @Override
     public void handle(Update update, Bot bot) {
         Message userMsg = update.getMessage();
