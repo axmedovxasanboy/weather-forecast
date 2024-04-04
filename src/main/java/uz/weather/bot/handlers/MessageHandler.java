@@ -6,7 +6,9 @@ import org.telegram.telegrambots.meta.api.objects.Contact;
 import org.telegram.telegrambots.meta.api.objects.Location;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -15,6 +17,7 @@ import uz.weather.bot.bot.Steps;
 import uz.weather.model.forecast.WeatherForecast;
 import uz.weather.model.search.Search;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -84,8 +87,54 @@ public class MessageHandler implements BaseHandler {
         WeatherForecast forecast = new WeatherForecast();
         String cityName = userMessage.getText();
         List<Search> searchResponse = forecast.searchCity(cityName);
-        
+        if (searchResponse == null) {
+            message.setText("Unable to find information about entered city\nPlease check again whether city name is correctly written");
+        } else if (searchResponse.size() == 1) {
+            Search search = searchResponse.getFirst();
+            Integer key = search.getKey();
 
+            message.setText(String.valueOf(searchResponse.size()));
+        } else {
+            InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup();
+            StringBuilder builder = new StringBuilder();
+            int i = 0;
+            for (Search city : searchResponse) {
+                if (i == 10) break;
+                builder.append((i + 1)).append(". ").
+                        append(city.getEnglishName()).append(", ").
+                        append(city.getAdministrativeArea().getEnglishName()).append(", ").
+                        append(city.getCountry().getEnglishName()).append('\n');
+                i++;
+            }
+            int size = Math.min(searchResponse.size(), 10);
+            List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+            int counter = 0;
+
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            for (i = 0; i < size; i++) {
+                if (counter == 5) {
+                    keyboard.add(row);
+                    row = new ArrayList<>();
+                    counter = 0;
+                }
+
+                InlineKeyboardButton b1 = new InlineKeyboardButton();
+                b1.setText(String.valueOf(i + 1));
+                b1.setCallbackData(String.valueOf(i));
+                row.add(b1);
+                counter++;
+            }
+            if (size % 5 != 0) {
+                keyboard.add(row);
+            }
+
+            keyboardMarkup.setKeyboard(keyboard);
+
+            message.setReplyMarkup(keyboardMarkup);
+            message.setText(String.valueOf(builder));
+            Steps.set(chatId, "city found");
+
+        }
 
 
     }

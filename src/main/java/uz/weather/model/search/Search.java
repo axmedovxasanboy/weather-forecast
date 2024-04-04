@@ -5,6 +5,7 @@ import lombok.Getter;
 @Getter
 public class Search {
     protected String LocalizedName;
+    protected Integer Key;
     protected String EnglishName;
     protected Region Region;
     protected Country Country;
@@ -14,6 +15,7 @@ public class Search {
     public String toString() {
         return "Search{" +
                 "LocalizedName='" + LocalizedName + '\'' +
+                ", Key=" + Key + '\'' +
                 ", EnglishName='" + EnglishName + '\'' +
                 ", Region=" + Region +
                 ", Country=" + Country +

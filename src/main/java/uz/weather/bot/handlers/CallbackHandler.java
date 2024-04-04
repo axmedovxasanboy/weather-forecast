@@ -33,11 +33,7 @@ public class CallbackHandler implements BaseHandler {
     private void sendMenu(Long chatId, CallbackQuery callbackQuery, SendMessage message) {
         String data = callbackQuery.getData();
 
-        if(data.equals("startForecast")){
-            message.setText("Please enter city name");
-            locationKeyboard(message);
-
-        }
+//        Integer
 
     }
 
