@@ -9,14 +9,12 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Country {
     protected String ID;
-    protected String LocalizedName;
     protected String EnglishName;
 
     @Override
     public String toString() {
         return "Country{" +
                 "ID='" + ID + '\'' +
-                ", LocalizedName='" + LocalizedName + '\'' +
                 ", EnglishName='" + EnglishName + '\'' +
                 '}';
     }

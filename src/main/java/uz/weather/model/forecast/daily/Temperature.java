@@ -1,15 +1,15 @@
-package uz.weather.model.dailyforecasts;
+package uz.weather.model.forecast.daily;
 
 import lombok.Getter;
 
 @Getter
-public class RealFeelTemperature {
+public class Temperature {
     protected Minimum Minimum;
     protected Maximum Maximum;
 
     @Override
     public String toString() {
-        return "RealFeelTemperature{" +
+        return "Temperature{" +
                 "Minimum=" + Minimum +
                 ", Maximum=" + Maximum +
                 '}';

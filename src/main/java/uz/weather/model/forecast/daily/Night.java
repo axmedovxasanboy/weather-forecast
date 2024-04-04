@@ -1,4 +1,4 @@
-package uz.weather.model.dailyforecasts;
+package uz.weather.model.forecast.daily;
 
 
 import lombok.Getter;
