@@ -1,9 +1,10 @@
-package uz.weather.model.forecast.daily;
+package uz.weather.model.main;
 
 import lombok.Getter;
+import uz.weather.model.main.forecast.*;
 
 @Getter
-public class DailyForecasts {
+public class DailyForecasts extends Forecast {
     protected String Date;
     protected Sun Sun;
     protected Temperature Temperature;
@@ -13,7 +14,7 @@ public class DailyForecasts {
 
     @Override
     public String toString() {
-        return "DailyForecasts{" +
+        return "DailyForecasts={" +
                 "Date='" + Date + '\'' +
                 ", Sun=" + Sun +
                 ", Temperature=" + Temperature +

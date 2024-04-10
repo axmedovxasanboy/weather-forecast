@@ -1,19 +1,17 @@
-package uz.weather.model.forecast.daily;
+package uz.weather.model.main.forecast;
 
 import lombok.Getter;
 
 @Getter
-public class Maximum {
+public class Speed {
     protected Double Value;
     protected String Unit;
-    protected String Phrase;
 
     @Override
     public String toString() {
-        return "Maximum{" +
+        return "Speed{" +
                 "Value=" + Value +
                 ", Unit='" + Unit + '\'' +
-                ", Phrase='" + Phrase + '\'' +
                 '}';
     }
 }

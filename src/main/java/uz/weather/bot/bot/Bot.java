@@ -10,13 +10,16 @@ public class Bot extends TelegramLongPollingBot {
 
     private BaseHandler messageHandler;
     private BaseHandler callbackHandler;
+    private Long chatId;
 
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage()) {
-            messageHandler.handle(update, this);
+            chatId = update.getMessage().getChatId();
+            messageHandler.handle(update, chatId, this);
         }else{
-            callbackHandler.handle(update, this);
+            chatId = update.getCallbackQuery().getFrom().getId();
+            callbackHandler.handle(update, chatId, this);
         }
     }
 

@@ -1,9 +1,10 @@
-package uz.weather.model.forecast.daily;
+package uz.weather.model.main.forecast;
+
 
 import lombok.Getter;
 
 @Getter
-public class Day {
+public class Night {
     protected Boolean HasPrecipitation;
     protected String PrecipitationType;
     protected String PrecipitationIntensity;
@@ -13,7 +14,7 @@ public class Day {
 
     @Override
     public String toString() {
-        return "Day{" +
+        return "Night{" +
                 "HasPrecipitation=" + HasPrecipitation +
                 ", PrecipitationType='" + PrecipitationType + '\'' +
                 ", PrecipitationIntensity='" + PrecipitationIntensity + '\'' +
