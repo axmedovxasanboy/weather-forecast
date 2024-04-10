@@ -8,12 +8,12 @@ import uz.weather.bot.handlers.MessageHandler;
 
 public class Bot extends TelegramLongPollingBot {
 
-    private BaseHandler messageHandler;
-    private BaseHandler callbackHandler;
-    private Long chatId;
+    private final BaseHandler messageHandler;
+    private final BaseHandler callbackHandler;
 
     @Override
     public void onUpdateReceived(Update update) {
+        Long chatId;
         if (update.hasMessage()) {
             chatId = update.getMessage().getChatId();
             messageHandler.handle(update, chatId, this);
