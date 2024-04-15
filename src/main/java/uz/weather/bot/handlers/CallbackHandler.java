@@ -1,5 +1,6 @@
 package uz.weather.bot.handlers;
 
+import lombok.Getter;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -56,8 +57,10 @@ public class CallbackHandler implements BaseHandler {
                     message.setChatId(chatId);
                     message.enableHtml(true);
                     cityKey = Integer.parseInt(data.split("_")[2]);
-                    if (dailyForecasts == null)
-                        dailyForecasts = (List<DailyForecasts>) forecast.sendForecasts(cityKey, true);
+                    if (dailyForecasts == null) {
+                        Steps.setForecasts(chatId, cityKey, forecast.sendForecasts(cityKey, true));
+                        dailyForecasts = (List<DailyForecasts>) Steps.getForecasts(chatId, cityKey);
+                    }
                     Steps.set(chatId, "city selected");
                     sendSearched(cityKey, message);
                     execute(bot, message);
@@ -68,9 +71,10 @@ public class CallbackHandler implements BaseHandler {
                 message.setChatId(chatId);
                 message.enableHtml(true);
                 message.setMessageId(callbackQuery.getMessage().getMessageId());
-                if (hourlyForecasts == null)
-                    hourlyForecasts = (List<HourlyForecasts>) forecast.sendForecasts(cityKey, false);
-
+                if (hourlyForecasts == null) {
+                    Steps.setForecasts(chatId, cityKey, forecast.sendForecasts(cityKey, false));
+                    hourlyForecasts = (List<HourlyForecasts>) Steps.getForecasts(chatId, cityKey);
+                }
                 if (data.equals("one_hour")) {
                     getTypesOfForecast(message, API.ONE_HOUR);
                     message.setText(setTextForHourly(hourlyForecasts, 0));
@@ -92,9 +96,10 @@ public class CallbackHandler implements BaseHandler {
                 message.setChatId(chatId);
                 message.enableHtml(true);
                 message.setMessageId(callbackQuery.getMessage().getMessageId());
-                if (dailyForecasts == null)
-                    dailyForecasts = (List<DailyForecasts>) forecast.sendForecasts(cityKey, true);
-
+                if (dailyForecasts == null) {
+                    Steps.setForecasts(chatId, cityKey, forecast.sendForecasts(cityKey, true));
+                    dailyForecasts = (List<DailyForecasts>) Steps.getForecasts(chatId, cityKey);
+                }
                 if (data.equals("one_day")) {
                     day = 0;
                     getTypesOfForecast(message, API.ONE_DAY);
