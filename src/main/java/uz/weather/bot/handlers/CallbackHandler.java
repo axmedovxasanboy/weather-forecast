@@ -1,6 +1,5 @@
 package uz.weather.bot.handlers;
 
-import lombok.Getter;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -23,6 +22,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -30,14 +30,12 @@ public class CallbackHandler implements BaseHandler {
     private final WeatherForecast forecast = Instances.forecast;
     private Integer cityKey;
     private String fullCityName;
-    private List<DailyForecasts> dailyForecasts;
-    private List<HourlyForecasts> hourlyForecasts;
+    private final HashMap<Long, List<DailyForecasts>> allDailyForecast = new HashMap<>();
+    private final HashMap<Long, List<HourlyForecasts>> allHourlyForecast = new HashMap<>();
     private Integer day;
-    private Long chatId;
 
     @Override
     public void handle(Update update, Long chatId, Bot bot) {
-        this.chatId = chatId;
         CallbackQuery callbackQuery = update.getCallbackQuery();
         String data = callbackQuery.getData();
         if (data.endsWith("hour"))
@@ -57,12 +55,14 @@ public class CallbackHandler implements BaseHandler {
                     message.setChatId(chatId);
                     message.enableHtml(true);
                     cityKey = Integer.parseInt(data.split("_")[2]);
+                    allDailyForecast.put(chatId, (List<DailyForecasts>) forecast.sendForecasts(cityKey, true));
+                    List<DailyForecasts> dailyForecasts = allDailyForecast.getOrDefault(chatId, null);
                     if (dailyForecasts == null) {
-                        Steps.setForecasts(chatId, cityKey, forecast.sendForecasts(cityKey, true));
-                        dailyForecasts = (List<DailyForecasts>) Steps.getForecasts(chatId, cityKey);
+                        allDailyForecast.put(chatId, (List<DailyForecasts>) forecast.sendForecasts(cityKey, true));
+                        dailyForecasts = allDailyForecast.getOrDefault(chatId, null);
                     }
                     Steps.set(chatId, "city selected");
-                    sendSearched(cityKey, message);
+                    sendSearched(cityKey, message, dailyForecasts, chatId);
                     execute(bot, message);
                 }
             }
@@ -71,20 +71,22 @@ public class CallbackHandler implements BaseHandler {
                 message.setChatId(chatId);
                 message.enableHtml(true);
                 message.setMessageId(callbackQuery.getMessage().getMessageId());
+                allHourlyForecast.put(chatId, (List<HourlyForecasts>) forecast.sendForecasts(cityKey, false));
+                List<HourlyForecasts> hourlyForecasts = allHourlyForecast.getOrDefault(chatId, null);
                 if (hourlyForecasts == null) {
-                    Steps.setForecasts(chatId, cityKey, forecast.sendForecasts(cityKey, false));
-                    hourlyForecasts = (List<HourlyForecasts>) Steps.getForecasts(chatId, cityKey);
+                    allHourlyForecast.put(chatId, (List<HourlyForecasts>) forecast.sendForecasts(cityKey, false));
+                    hourlyForecasts = allHourlyForecast.getOrDefault(chatId, null);
                 }
                 if (data.equals("one_hour")) {
-                    getTypesOfForecast(message, API.ONE_HOUR);
+                    getTypesOfForecast(message, API.ONE_HOUR, chatId);
                     message.setText(setTextForHourly(hourlyForecasts, 0));
                     execute(bot, message);
                 } else if (data.equals("twelve_hour")) {
-                    getTypesOfForecast(message, API.TWELVE_HOUR);
+                    getTypesOfForecast(message, API.TWELVE_HOUR, chatId);
                     message.setText(setTextForHourly(hourlyForecasts, 0));
                     execute(bot, message);
                 } else if (data.endsWith("hour_forecast")) {
-                    getTypesOfForecast(message, API.TWELVE_HOUR);
+                    getTypesOfForecast(message, API.TWELVE_HOUR, chatId);
                     Integer order = Integer.parseInt(data.split("_")[0]);
                     message.setText(setTextForHourly(hourlyForecasts, order));
                     execute(bot, message);
@@ -96,30 +98,27 @@ public class CallbackHandler implements BaseHandler {
                 message.setChatId(chatId);
                 message.enableHtml(true);
                 message.setMessageId(callbackQuery.getMessage().getMessageId());
-                if (dailyForecasts == null) {
-                    Steps.setForecasts(chatId, cityKey, forecast.sendForecasts(cityKey, true));
-                    dailyForecasts = (List<DailyForecasts>) Steps.getForecasts(chatId, cityKey);
-                }
+                List<DailyForecasts> dailyForecasts = allDailyForecast.getOrDefault(chatId, null);
                 if (data.equals("one_day")) {
                     day = 0;
-                    getTypesOfForecast(message, API.ONE_DAY);
+                    getTypesOfForecast(message, API.ONE_DAY, chatId);
                     message.setText(setTextForDaily(dailyForecasts, 0));
                     execute(bot, message);
                 } else if (data.equals("five_day")) {
                     day = 0;
-                    getTypesOfForecast(message, API.FIVE_DAY);
+                    getTypesOfForecast(message, API.FIVE_DAY, chatId);
                     message.setText(setTextForDaily(dailyForecasts, 0));
                     execute(bot, message);
                 } else if (data.endsWith("day_forecast")) {
                     Integer order = Integer.parseInt(data.split("_")[0]);
                     day = order;
-                    getTypesOfForecast(message, API.FIVE_DAY);
+                    getTypesOfForecast(message, API.FIVE_DAY, chatId);
                     message.setText(setTextForDaily(dailyForecasts, order));
                     execute(bot, message);
                 } else if (data.endsWith("_detailed_forecast_day")) {
                     Integer order = Integer.parseInt(data.split("_")[0]);
                     Steps.set(chatId, "detailed_selected");
-                    getTypesOfForecast(message, API.FIVE_DAY);
+                    getTypesOfForecast(message, API.FIVE_DAY, chatId);
                     message.setText(setTextForDailyDetailed(dailyForecasts, order));
                     execute(bot, message);
                 }
@@ -146,10 +145,10 @@ public class CallbackHandler implements BaseHandler {
         }
     }
 
-    private void sendSearched(Integer cityKey, SendMessage message) {
+    private void sendSearched(Integer cityKey, SendMessage message, List<DailyForecasts> dailyForecasts, Long chatId) {
         fullCityName = getFullCityName(cityKey, forecast.getSearches());
         day = 0;
-        getTypesOfForecast(message);
+        getTypesOfForecast(message, chatId);
         if (fullCityName != null) {
             message.setText(setTextForDaily(dailyForecasts, 0));
         } else {
@@ -157,18 +156,18 @@ public class CallbackHandler implements BaseHandler {
         }
     }
 
-    private void getTypesOfForecast(SendMessage message) {
-        InlineKeyboardMarkup keyboardMarkup = getInlineKeyboardMarkup(API.ONE_DAY);
+    private void getTypesOfForecast(SendMessage message, Long chatId) {
+        InlineKeyboardMarkup keyboardMarkup = getInlineKeyboardMarkup(API.ONE_DAY, chatId);
         message.setReplyMarkup(keyboardMarkup);
 
     }
 
-    private void getTypesOfForecast(EditMessageText message, API nonProviding) {
-        InlineKeyboardMarkup keyboardMarkup = getInlineKeyboardMarkup(nonProviding);
+    private void getTypesOfForecast(EditMessageText message, API nonProviding, Long chatId) {
+        InlineKeyboardMarkup keyboardMarkup = getInlineKeyboardMarkup(nonProviding, chatId);
         message.setReplyMarkup(keyboardMarkup);
     }
 
-    private InlineKeyboardMarkup getInlineKeyboardMarkup(API nonProviding) {
+    private InlineKeyboardMarkup getInlineKeyboardMarkup(API nonProviding, Long chatId) {
         API[] values = API.values();
         InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> column = new ArrayList<>();
@@ -176,8 +175,8 @@ public class CallbackHandler implements BaseHandler {
         String buttonText = String.valueOf(nonProviding);
         String split1 = buttonText.split("_")[0];
         switch (split1) {
-            case "TWELVE" -> setCallbackQuery(row, column, 12);
-            case "FIVE" -> setCallbackQuery(row, column, 5);
+            case "TWELVE" -> setCallbackQuery(row, column, 12, chatId);
+            case "FIVE" -> setCallbackQuery(row, column, 5, chatId);
         }
         row = new ArrayList<>();
 
@@ -216,8 +215,10 @@ public class CallbackHandler implements BaseHandler {
     }
 
 
-    private void setCallbackQuery(List<InlineKeyboardButton> row, List<List<InlineKeyboardButton>> column, Integer number) {
+    private void setCallbackQuery(List<InlineKeyboardButton> row, List<List<InlineKeyboardButton>> column, Integer number, Long chatId) {
         String helper = number == 12 ? "hour" : "day", helper2;
+        List<DailyForecasts> dailyForecasts = allDailyForecast.get(chatId);
+        List<HourlyForecasts> hourlyForecasts = allHourlyForecast.get(chatId);
 
         for (int i = 1; i <= number; i++) {
             if (helper.equals("hour")) helper2 = hourlyForecasts.get(i - 1).getDateTime().split("T")[1].substring(0, 5);
