@@ -34,6 +34,7 @@ public class CallbackHandler implements BaseHandler {
     private final HashMap<Long, List<HourlyForecasts>> allHourlyForecast = new HashMap<>();
     private Integer day;
 
+
     @Override
     public void handle(Update update, Long chatId, Bot bot) {
         CallbackQuery callbackQuery = update.getCallbackQuery();
