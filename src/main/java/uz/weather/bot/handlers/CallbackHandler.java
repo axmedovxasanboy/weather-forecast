@@ -29,7 +29,7 @@ import java.util.Locale;
 public class CallbackHandler implements BaseHandler {
     private final WeatherForecast forecast = Instances.forecast;
     private Integer cityKey;
-    private String fullCityName;
+    private final HashMap<Long, String> fullCityNames = new HashMap<>();
     private final HashMap<Long, List<DailyForecasts>> allDailyForecast = new HashMap<>();
     private final HashMap<Long, List<HourlyForecasts>> allHourlyForecast = new HashMap<>();
     private Integer day;
@@ -80,16 +80,16 @@ public class CallbackHandler implements BaseHandler {
                 }
                 if (data.equals("one_hour")) {
                     getTypesOfForecast(message, API.ONE_HOUR, chatId);
-                    message.setText(setTextForHourly(hourlyForecasts, 0));
+                    message.setText(setTextForHourly(hourlyForecasts, 0, chatId));
                     execute(bot, message);
                 } else if (data.equals("twelve_hour")) {
                     getTypesOfForecast(message, API.TWELVE_HOUR, chatId);
-                    message.setText(setTextForHourly(hourlyForecasts, 0));
+                    message.setText(setTextForHourly(hourlyForecasts, 0, chatId));
                     execute(bot, message);
                 } else if (data.endsWith("hour_forecast")) {
                     getTypesOfForecast(message, API.TWELVE_HOUR, chatId);
                     Integer order = Integer.parseInt(data.split("_")[0]);
-                    message.setText(setTextForHourly(hourlyForecasts, order));
+                    message.setText(setTextForHourly(hourlyForecasts, order, chatId));
                     execute(bot, message);
                 }
 
@@ -103,24 +103,24 @@ public class CallbackHandler implements BaseHandler {
                 if (data.equals("one_day")) {
                     day = 0;
                     getTypesOfForecast(message, API.ONE_DAY, chatId);
-                    message.setText(setTextForDaily(dailyForecasts, 0));
+                    message.setText(setTextForDaily(dailyForecasts, 0, chatId));
                     execute(bot, message);
                 } else if (data.equals("five_day")) {
                     day = 0;
                     getTypesOfForecast(message, API.FIVE_DAY, chatId);
-                    message.setText(setTextForDaily(dailyForecasts, 0));
+                    message.setText(setTextForDaily(dailyForecasts, 0, chatId));
                     execute(bot, message);
                 } else if (data.endsWith("day_forecast")) {
                     Integer order = Integer.parseInt(data.split("_")[0]);
                     day = order;
                     getTypesOfForecast(message, API.FIVE_DAY, chatId);
-                    message.setText(setTextForDaily(dailyForecasts, order));
+                    message.setText(setTextForDaily(dailyForecasts, order, chatId));
                     execute(bot, message);
                 } else if (data.endsWith("_detailed_forecast_day")) {
                     Integer order = Integer.parseInt(data.split("_")[0]);
                     Steps.set(chatId, "detailed_selected");
                     getTypesOfForecast(message, API.FIVE_DAY, chatId);
-                    message.setText(setTextForDailyDetailed(dailyForecasts, order));
+                    message.setText(setTextForDailyDetailed(dailyForecasts, order, chatId));
                     execute(bot, message);
                 }
             }
@@ -147,11 +147,12 @@ public class CallbackHandler implements BaseHandler {
     }
 
     private void sendSearched(Integer cityKey, SendMessage message, List<DailyForecasts> dailyForecasts, Long chatId) {
-        fullCityName = getFullCityName(cityKey, forecast.getSearches());
+        String fullCityName = getFullCityName(cityKey, forecast.getSearches());
         day = 0;
         getTypesOfForecast(message, chatId);
         if (fullCityName != null) {
-            message.setText(setTextForDaily(dailyForecasts, 0));
+            fullCityNames.put(chatId, fullCityName);
+            message.setText(setTextForDaily(dailyForecasts, 0, chatId));
         } else {
             System.out.println("forecast.getSearches() is returning null");
         }
@@ -257,7 +258,7 @@ public class CallbackHandler implements BaseHandler {
         return null;
     }
 
-    private String setTextForHourly(List<HourlyForecasts> hourlyForecasts, Integer order) {
+    private String setTextForHourly(List<HourlyForecasts> hourlyForecasts, Integer order, Long chatId) {
         HourlyForecasts hourly = hourlyForecasts.get(order);
         StringBuilder builder = new StringBuilder();
         String date = getDate(hourly.getDateTime().split("T")[0]);
@@ -271,6 +272,7 @@ public class CallbackHandler implements BaseHandler {
 
         Number maxTemp = FtoC(hourly.getTemperature().getValue());
         Number realFeelTemp = FtoC(hourly.getRealFeelTemperature().getValue());
+        String fullCityName = fullCityNames.get(chatId);
 
         builder.append(fullCityName).append("\uD83D\uDCC5 ").append(date).append("\n")
                 .append("\uD83D\uDD52 ").append(hour).append(" (GMT").append(dateTime, dateTime.length() - 6, dateTime.length() - 3).append(")").append("\n")
@@ -283,7 +285,7 @@ public class CallbackHandler implements BaseHandler {
         return builder.toString();
     }
 
-    private String setTextForDaily(List<DailyForecasts> dailyForecasts, Integer order) {
+    private String setTextForDaily(List<DailyForecasts> dailyForecasts, Integer order, Long chatId) {
         StringBuilder builder = new StringBuilder();
         DailyForecasts daily = dailyForecasts.get(order);
         String date = getDate(daily.getDate().substring(0, daily.getDate().indexOf("T")));
@@ -292,6 +294,7 @@ public class CallbackHandler implements BaseHandler {
         Number maxTempC = FtoC(daily.getTemperature().getMaximum().getValue());
         Number daySpeedK = mileToKm(daily.getDay().getWind().getSpeed().getValue());
         Number nightSpeedK = mileToKm(daily.getNight().getWind().getSpeed().getValue());
+        String fullCityName = fullCityNames.get(chatId);
 
         builder.append(fullCityName).append(date).append("\n\n").
                 append("\uD83C\uDF04 Day: ").append(daily.getDay().getShortPhrase()).append(".\n").
@@ -304,7 +307,7 @@ public class CallbackHandler implements BaseHandler {
         return builder.toString();
     }
 
-    private String setTextForDailyDetailed(List<DailyForecasts> dailyForecasts, Integer order) {
+    private String setTextForDailyDetailed(List<DailyForecasts> dailyForecasts, Integer order, Long chatId) {
         StringBuilder builder = new StringBuilder();
         StringBuilder dayPrecipitation = new StringBuilder();
         StringBuilder nightPrecipitation = new StringBuilder();
@@ -326,6 +329,7 @@ public class CallbackHandler implements BaseHandler {
         Number minRealTempC = FtoC(daily.getRealFeelTemperature().getMinimum().getValue());
         Number daySpeedK = mileToKm(daily.getDay().getWind().getSpeed().getValue());
         Number nightSpeedK = mileToKm(daily.getNight().getWind().getSpeed().getValue());
+        String fullCityName = fullCityNames.get(chatId);
 
 
         builder.append(fullCityName).append(date).append("\n\n").
